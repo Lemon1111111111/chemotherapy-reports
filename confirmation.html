@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Mes Rapports</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="navbar-brand">🏥 Système de Déclaration d'Incidents</div>
+            <div class="navbar-user">
+                <span id="userName">Utilisateur</span>
+                <button class="btn btn-primary" id="newReportBtn" style="width: auto; padding: 8px 20px; margin-left: 10px;">
+                    ➕ Nouveau rapport
+                </button>
+                <button class="btn btn-danger" id="logoutBtn" style="width: auto; padding: 8px 20px;">
+                    🚪 Déconnexion
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Mes Rapports Précédents</h2>
+            
+            <div id="alertMessage" class="alert hidden"></div>
+            <div class="spinner show" id="loadingSpinner"></div>
+
+            <div id="reportsContainer" class="hidden">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>📅 Date</th>
+                                <th>🏥 Service</th>
+                                <th>💊 Médicament</th>
+                                <th>💉 Dosage</th>
+                                <th>🏭 Labo</th>
+                                <th>📝 Description</th>
+                                <th>🛡️ EPI</th>
+                                <th>📷 Photo</th>
+                                <th>📊 Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="noReportsMessage" class="hidden" style="text-align: center; padding: 40px;">
+                <h3 style="color: #718096;">📋 Aucun rapport pour le moment</h3>
+                <p style="color: #a0aec0; margin-top: 10px;">Commencez par créer votre premier rapport</p>
+                <button class="btn btn-primary" onclick="window.location.href='report.html'" style="margin-top: 20px; width: auto; padding: 12px 30px;">
+                    ➕ Créer un nouveau rapport
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm'
+
+        const SUPABASE_URL = 'https://tewlugshhfcgkujgovjb.supabase.co'
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRld2x1Z3NoaGZjZ2t1amdvdmpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNjU5NTAsImV4cCI6MjA4MDg0MTk1MH0.ECW1RQ1tJveR0vc3R297nvG-jvCwKqmkCUaFHUEK2hc'
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+        const user = JSON.parse(localStorage.getItem('user'))
+        if (!user) {
+            window.location.href = 'index.html'
+        }
+
+        document.getElementById('userName').textContent = user.name
+
+        const loadingSpinner = document.getElementById('loadingSpinner')
+        const reportsContainer = document.getElementById('reportsContainer')
+        const noReportsMessage = document.getElementById('noReportsMessage')
+        const reportsTableBody = document.getElementById('reportsTableBody')
+        const alertMessage = document.getElementById('alertMessage')
+
+        let allIncidents = []
+
+        function showAlert(message, type) {
+            alertMessage.textContent = message
+            alertMessage.className = 'alert alert-' + type
+            alertMessage.classList.remove('hidden')
+            setTimeout(() => alertMessage.classList.add('hidden'), 5000)
+        }
+
+        function getServiceNameFr(service) {
+            const names = {
+                'oncology': 'Oncologie',
+                'hematology': 'Hématologie',
+                'pediatric': 'Pédiatrie'
+            }
+            return names[service] || service
+        }
+
+        function getStatusText(status) {
+            const statuses = {
+                'pending': { text: 'En attente', class: 'status-pending' },
+                'reviewed': { text: 'Examiné', class: 'status-reviewed' },
+                'resolved': { text: 'Résolu', class: 'status-resolved' }
+            }
+            return statuses[status] || { text: status, class: 'status-pending' }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString)
+            return date.toLocaleDateString('fr-FR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+        }
+
+        function getPPEList(incident) {
+            const ppe = []
+            if (incident.wearing_gloves) ppe.push('🧤')
+            if (incident.wearing_gown) ppe.push('👔')
+            if (incident.wearing_cap) ppe.push('🧢')
+            if (incident.wearing_apron) ppe.push('😷')
+            if (incident.wearing_shoe_covers) ppe.push('👓')
+            return ppe.length > 0 ? ppe.join(' ') : '❌'
+        }
+
+        async function loadReports() {
+            try {
+                const { data, error } = await supabase
+                    .from('incidents')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+
+                if (error) throw error
+
+                loadingSpinner.classList.remove('show')
+
+                if (!data || data.length === 0) {
+                    noReportsMessage.classList.remove('hidden')
+                    return
+                }
+
+                allIncidents = data
+                reportsContainer.classList.remove('hidden')
+                
+                reportsTableBody.innerHTML = data.map(inc => {
+                    const statusInfo = getStatusText(inc.status)
+                    return '<tr onclick="showDetails(\'' + inc.id + '\')" style="cursor: pointer;"><td>' + formatDate(inc.incident_time) + '</td><td>' + getServiceNameFr(inc.service) + '</td><td><strong>' + inc.drug_name + '</strong><br><small>' + inc.drug_number + '</small></td><td>' + (inc.dosage || 'N/A') + '</td><td>' + (inc.laboratory || 'N/A') + '</td><td>' + (inc.incident_description ? (inc.incident_description.substring(0, 30) + '...') : 'Aucune') + '</td><td style="font-size: 12px;">' + getPPEList(inc) + '</td><td>' + (inc.incident_image_url ? '✅ Oui' : '❌ Non') + '</td><td><span class="status-badge ' + statusInfo.class + '">' + statusInfo.text + '</span></td></tr>'
+                }).join('')
+
+            } catch (error) {
+                loadingSpinner.classList.remove('show')
+                console.error('Erreur:', error)
+                showAlert('❌ Erreur: ' + error.message, 'danger')
+            }
+        }
+
+        window.showDetails = function(id) {
+            const inc = allIncidents.find(i => i.id === id)
+            if (!inc) return
+
+            const modal = document.createElement('div')
+            modal.id = 'detailsModal'
+            modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;'
+            
+            modal.innerHTML = '<div class="card" style="max-width: 600px; margin: 20px; max-height: 90vh; overflow-y: auto;"><h3>📋 Détails du Rapport</h3><div style="line-height: 2;"><p><strong>🏥 Service:</strong> ' + getServiceNameFr(inc.service) + '</p><p><strong>💊 Médicament (DCI):</strong> ' + inc.drug_name + '</p><p><strong>💉 Dosage:</strong> ' + (inc.dosage || 'N/A') + '</p><p><strong>🔢 Numéro de lot:</strong> ' + inc.drug_number + '</p><p><strong>🏭 Laboratoire:</strong> ' + (inc.laboratory || 'N/A') + '</p><p><strong>📅 Date de péremption:</strong> ' + (inc.expiry_date ? new Date(inc.expiry_date).toLocaleDateString('fr-FR') : 'N/A') + '</p><p><strong>🕐 Heure de l\'incident:</strong> ' + formatDate(inc.incident_time) + '</p><p><strong>📝 Description:</strong> ' + (inc.incident_description || 'Aucune') + '</p><p><strong>🛡️ Équipements de protection:</strong><br>' + (inc.wearing_gloves ? '✅ Gants' : '❌ Gants') + '<br>' + (inc.wearing_gown ? '✅ Blouse' : '❌ Blouse') + '<br>' + (inc.wearing_cap ? '✅ Calot' : '❌ Calot') + '<br>' + (inc.wearing_apron ? '✅ Masque' : '❌ Masque') + '<br>' + (inc.wearing_shoe_covers ? '✅ Lunettes' : '❌ Lunettes') + '</p><p><strong>📊 Statut:</strong> <span class="status-badge ' + getStatusText(inc.status).class + '">' + getStatusText(inc.status).text + '</span></p>' + (inc.incident_image_url ? '<p><strong>📷 Photo:</strong><br><img src="' + inc.incident_image_url + '" style="max-width: 100%; border-radius: 10px; margin-top: 10px;"></p>' : '') + '</div><button class="btn btn-secondary" onclick="this.closest(\'#detailsModal\').remove()">Fermer</button></div>'
+
+            document.body.appendChild(modal)
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'detailsModal') {
+                    modal.remove()
+                }
+            })
+        }
+
+        document.getElementById('newReportBtn').addEventListener('click', () => {
+            window.location.href = 'report.html'
+        })
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut()
+            localStorage.removeItem('user')
+            window.location.href = 'index.html'
+        })
+
+        loadReports()
+    </script>
+</body>
+</html>

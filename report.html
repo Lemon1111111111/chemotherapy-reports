@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Nouveau Rapport d'Incident</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Barre de navigation -->
+        <div class="navbar">
+            <div class="navbar-brand">🏥 Système de Déclaration d'Incidents</div>
+            <div class="navbar-user">
+                <span id="userName">Utilisateur</span>
+                <button class="btn btn-danger" id="logoutBtn" style="width: auto; padding: 8px 20px;">
+                    🚪 Déconnexion
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte principale -->
+        <div class="card">
+            <h2>📋 Déclaration d'Incident lors de la Préparation de Chimiothérapie</h2>
+            
+            <!-- Messages d'alerte -->
+            <div id="alertMessage" class="alert hidden"></div>
+
+            <!-- Formulaire de rapport -->
+            <form id="incidentForm">
+                <!-- Service -->
+                <div class="form-group">
+                    <label class="form-label">🏥 Service</label>
+                    <select class="form-select" id="service" required>
+                        <option value="">Choisir le service</option>
+                        <option value="oncology">Oncologie</option>
+                        <option value="hematology">Hématologie</option>
+                        <option value="pediatric">Pédiatrie</option>
+                    </select>
+                </div>
+
+                <!-- Nom du médicament avec recherche -->
+                <div class="form-group">
+                    <label class="form-label">💊 Nom du médicament (DCI)</label>
+                    <input type="text" class="form-control" id="drugName" 
+                           placeholder="Commencez à taper pour rechercher..." 
+                           autocomplete="off" required>
+                    <div id="drugSuggestions" class="suggestions-box" style="display: none;"></div>
+                    <input type="hidden" id="selectedDCI">
+                </div>
+
+                <!-- Dosage -->
+                <div class="form-group">
+                    <label class="form-label">💉 Dosage</label>
+                    <select class="form-select" id="dosage" required>
+                        <option value="">Sélectionnez d'abord un médicament</option>
+                    </select>
+                </div>
+
+                <!-- Numéro du lot -->
+                <div class="form-group">
+                    <label class="form-label">🔢 Numéro du lot</label>
+                    <input type="text" class="form-control" id="drugNumber" 
+                           placeholder="Ex: LOT123456" required>
+                </div>
+
+                <!-- Laboratoire -->
+                <div class="form-group">
+                    <label class="form-label">🏭 Laboratoire fabricant</label>
+                    <input type="text" class="form-control" id="laboratory" 
+                           placeholder="Ex: Saidal , Sanofi , Novartis..." required>
+                </div>
+
+                <!-- Date de péremption -->
+                <div class="form-group">
+                    <label class="form-label">📅 Date de péremption</label>
+                    <input type="date" class="form-control" id="expiryDate" required>
+                </div>
+
+                <!-- Upload/Capture d'image -->
+                <div class="form-group">
+                    <label class="form-label">📷 Photo de l'incident</label>
+                    
+                    <!-- Boutons de choix -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-primary" id="captureBtn" style="width: auto; padding: 10px 20px;">
+                            📸 Prendre une photo
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="uploadBtn" style="width: auto; padding: 10px 20px;">
+                            📁 Choisir une image
+                        </button>
+                    </div>
+
+                    <!-- Input caché pour upload -->
+                    <input type="file" id="incidentImage" accept="image/*" style="display: none;">
+                    
+                    <!-- Vidéo pour la caméra -->
+                    <div id="cameraContainer" style="display: none; margin-bottom: 15px;">
+                        <video id="cameraVideo" autoplay playsinline style="width: 100%; max-width: 400px; border-radius: 10px; border: 2px solid #667eea;"></video>
+                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <button type="button" class="btn btn-success" id="takePictureBtn" style="width: auto; padding: 10px 20px;">
+                                ✅ Capturer
+                            </button>
+                            <button type="button" class="btn btn-danger" id="cancelCameraBtn" style="width: auto; padding: 10px 20px;">
+                                ❌ Annuler
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Aperçu de l'image -->
+                    <div id="imagePreviewContainer" style="display: none; position: relative; margin-top: 15px;">
+                        <img id="imagePreview" style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid #48bb78;">
+                        <button type="button" id="removeImageBtn" style="position: absolute; top: 10px; right: 10px; background: #f56565; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Heure de l'incident -->
+                <div class="form-group">
+                    <label class="form-label">🕐 Heure de l'incident</label>
+                    <input type="datetime-local" class="form-control" id="incidentTime" required>
+                </div>
+
+                <!-- Description de l'incident -->
+                <div class="form-group">
+                    <label class="form-label">📝 Description de l'incident (optionnel)</label>
+                    <textarea class="form-control" id="incidentDescription" 
+                              placeholder="Décrivez ce qui s'est passé en détail..." rows="4"></textarea>
+                </div>
+
+                <!-- Équipements de protection individuelle -->
+                <div class="form-group">
+                    <label class="form-label">🛡️ Équipements de Protection Individuelle (EPI)</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gloves">
+                            <label for="gloves">🧤 Gants</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="gown">
+                            <label for="gown">👔 Blouse</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cap">
+                            <label for="cap">🧢 Calot</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="apron">
+                            <label for="apron">😷 Masque</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="shoeCovers">
+                            <label for="shoeCovers">👓 Lunettes</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <button type="submit" class="btn btn-primary">
+                    📤 Envoyer le rapport
+                </button>
+                <button type="button" class="btn btn-secondary" id="viewReportsBtn">
+                    📊 Voir mes rapports précédents
+                </button>
+            </form>
+
+            <!-- Loading Spinner -->
+            <div class="spinner" id="loadingSpinner"></div>
+        </div>
+    </div>
+
+    <style>
+        .suggestions-box {
+            position: absolute;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 30px);
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+        .suggestion-item:hover {
+            background: #edf2f7;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .drug-dci {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .drug-dosage {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+    </style>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm'
+
+        const SUPABASE_URL = 'https://tewlugshhfcgkujgovjb.supabase.co'
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRld2x1Z3NoaGZjZ2t1amdvdmpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyNjU5NTAsImV4cCI6MjA4MDg0MTk1MH0.ECW1RQ1tJveR0vc3R297nvG-jvCwKqmkCUaFHUEK2hc'
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+        console.log('✅ Page de rapport chargée')
+
+        const user = JSON.parse(localStorage.getItem('user'))
+        if (!user) {
+            alert('❌ Veuillez vous connecter')
+            window.location.href = 'index.html'
+        }
+
+        document.getElementById('userName').textContent = user.name
+
+        const alertMessage = document.getElementById('alertMessage')
+        const loadingSpinner = document.getElementById('loadingSpinner')
+
+        // قاعدة بيانات الأدوية مع DCI و Dosages
+        const MEDICATIONS = [
+            { dci: 'Cisplatin', dosages: ['10mg/10ml', '50mg/50ml', '100mg/100ml'] },
+            { dci: 'Carboplatin', dosages: ['50mg/5ml', '150mg/15ml', '450mg/45ml', '600mg/60ml'] },
+            { dci: 'Oxaliplatin', dosages: ['50mg/10ml', '100mg/20ml', '200mg/40ml'] },
+            { dci: 'Doxorubicin', dosages: ['10mg/5ml', '50mg/25ml', '200mg/100ml'] },
+            { dci: 'Cyclophosphamide', dosages: ['200mg', '500mg', '1000mg'] },
+            { dci: 'Fluorouracil (5-FU)', dosages: ['250mg/5ml', '500mg/10ml', '1000mg/20ml', '2500mg/50ml', '5000mg/100ml'] },
+            { dci: 'Paclitaxel', dosages: ['30mg/5ml', '100mg/16.7ml', '300mg/50ml'] },
+            { dci: 'Docetaxel', dosages: ['20mg/0.5ml', '80mg/2ml', '160mg/4ml'] },
+            { dci: 'Gemcitabine', dosages: ['200mg', '1000mg', '2000mg'] },
+            { dci: 'Vincristine', dosages: ['1mg/1ml', '2mg/2ml', '5mg/5ml'] },
+            { dci: 'Vinblastine', dosages: ['10mg/10ml'] },
+            { dci: 'Etoposide', dosages: ['100mg/5ml', '500mg/25ml', '1000mg/50ml'] },
+            { dci: 'Irinotecan', dosages: ['40mg/2ml', '100mg/5ml', '300mg/15ml'] },
+            { dci: 'Methotrexate', dosages: ['50mg/2ml', '500mg/20ml', '1000mg/40ml', '5000mg/200ml'] },
+            { dci: 'Bleomycin', dosages: ['15mg'] },
+            { dci: 'Mitomycin', dosages: ['10mg', '20mg', '40mg'] },
+            { dci: 'Ifosfamide', dosages: ['1000mg', '2000mg'] },
+            { dci: 'Topotecan', dosages: ['1mg', '4mg'] },
+            { dci: 'Pemetrexed', dosages: ['100mg', '500mg'] },
+            { dci: 'Cytarabine', dosages: ['100mg/5ml', '500mg/25ml', '1000mg/50ml', '2000mg/100ml'] }
+        ]
+
+        function showAlert(message, type) {
+            alertMessage.textContent = message
+            alertMessage.className = 'alert alert-' + type
+            alertMessage.classList.remove('hidden')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+            setTimeout(() => alertMessage.classList.add('hidden'), 5000)
+        }
+
+        function toggleLoading(show) {
+            loadingSpinner.classList[show ? 'add' : 'remove']('show')
+        }
+
+        // ===== البحث عن الأدوية =====
+        const drugNameInput = document.getElementById('drugName')
+        const drugSuggestions = document.getElementById('drugSuggestions')
+        const dosageSelect = document.getElementById('dosage')
+        const selectedDCIInput = document.getElementById('selectedDCI')
+
+        drugNameInput.addEventListener('input', (e) => {
+            const value = e.target.value.toLowerCase().trim()
+            
+            if (value.length < 2) {
+                drugSuggestions.style.display = 'none'
+                return
+            }
+
+            const matches = MEDICATIONS.filter(med => 
+                med.dci.toLowerCase().includes(value)
+            )
+
+            if (matches.length === 0) {
+                drugSuggestions.style.display = 'none'
+                return
+            }
+
+            drugSuggestions.innerHTML = matches.map(med => 
+                '<div class="suggestion-item" data-dci="' + med.dci + '">' +
+                '<div class="drug-dci">' + med.dci + '</div>' +
+                '<div class="drug-dosage">Dosages disponibles: ' + med.dosages.join(', ') + '</div>' +
+                '</div>'
+            ).join('')
+
+            drugSuggestions.style.display = 'block'
+
+            drugSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const dci = item.getAttribute('data-dci')
+                    const med = MEDICATIONS.find(m => m.dci === dci)
+                    
+                    drugNameInput.value = dci
+                    selectedDCIInput.value = dci
+                    drugSuggestions.style.display = 'none'
+                    
+                    dosageSelect.innerHTML = '<option value="">Choisir le dosage</option>' + 
+                        med.dosages.map(d => '<option value="' + d + '">' + d + '</option>').join('')
+                    
+                    dosageSelect.disabled = false
+                })
+            })
+        })
+
+        document.addEventListener('click', (e) => {
+            if (!drugNameInput.contains(e.target) && !drugSuggestions.contains(e.target)) {
+                drugSuggestions.style.display = 'none'
+            }
+        })
+
+        // ===== الكاميرا والصور =====
+        const captureBtn = document.getElementById('captureBtn')
+        const uploadBtn = document.getElementById('uploadBtn')
+        const incidentImage = document.getElementById('incidentImage')
+        const cameraContainer = document.getElementById('cameraContainer')
+        const cameraVideo = document.getElementById('cameraVideo')
+        const cameraCanvas = document.getElementById('cameraCanvas')
+        const takePictureBtn = document.getElementById('takePictureBtn')
+        const cancelCameraBtn = document.getElementById('cancelCameraBtn')
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer')
+        const imagePreview = document.getElementById('imagePreview')
+        const removeImageBtn = document.getElementById('removeImageBtn')
+
+        let cameraStream = null
+        let capturedImageBlob = null
+
+        captureBtn.addEventListener('click', async () => {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                })
+                cameraVideo.srcObject = cameraStream
+                cameraContainer.style.display = 'block'
+                imagePreviewContainer.style.display = 'none'
+            } catch (error) {
+                showAlert('❌ Impossible d\'accéder à la caméra: ' + error.message, 'danger')
+            }
+        })
+
+        cancelCameraBtn.addEventListener('click', () => {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop())
+                cameraStream = null
+            }
+            cameraContainer.style.display = 'none'
+        })
+
+        takePictureBtn.addEventListener('click', () => {
+            const context = cameraCanvas.getContext('2d')
+            cameraCanvas.width = cameraVideo.videoWidth
+            cameraCanvas.height = cameraVideo.videoHeight
+            context.drawImage(cameraVideo, 0, 0)
+            
+            cameraCanvas.toBlob((blob) => {
+                capturedImageBlob = blob
+                imagePreview.src = URL.createObjectURL(blob)
+                imagePreviewContainer.style.display = 'block'
+                
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop())
+                    cameraStream = null
+                }
+                cameraContainer.style.display = 'none'
+            }, 'image/jpeg', 0.95)
+        })
+
+        uploadBtn.addEventListener('click', () => {
+            incidentImage.click()
+        })
+
+        incidentImage.addEventListener('change', (e) => {
+            const file = e.target.files[0]
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showAlert('❌ Image trop volumineuse. Maximum 5MB', 'danger')
+                    incidentImage.value = ''
+                    return
+                }
+                
+                capturedImageBlob = file
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result
+                    imagePreviewContainer.style.display = 'block'
+                }
+                reader.readAsDataURL(file)
+            }
+        })
+
+        removeImageBtn.addEventListener('click', () => {
+            capturedImageBlob = null
+            imagePreview.src = ''
+            imagePreviewContainer.style.display = 'none'
+            incidentImage.value = ''
+        })
+
+        // ===== إرسال التقرير =====
+        document.getElementById('incidentForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            
+            const service = document.getElementById('service').value
+            const drugName = selectedDCIInput.value || drugNameInput.value.trim()
+            const dosage = document.getElementById('dosage').value
+            const drugNumber = document.getElementById('drugNumber').value.trim()
+            const laboratory = document.getElementById('laboratory').value.trim()
+            const expiryDate = document.getElementById('expiryDate').value
+            const incidentTime = document.getElementById('incidentTime').value
+            const description = document.getElementById('incidentDescription').value.trim()
+            
+            const gloves = document.getElementById('gloves').checked
+            const gown = document.getElementById('gown').checked
+            const cap = document.getElementById('cap').checked
+            const apron = document.getElementById('apron').checked
+            const shoeCovers = document.getElementById('shoeCovers').checked
+            
+            if (!dosage) {
+                showAlert('❌ Veuillez sélectionner un dosage', 'danger')
+                return
+            }
+            
+            toggleLoading(true)
+            
+            try {
+                let imageUrl = null
+                
+                if (capturedImageBlob) {
+                    const fileName = Date.now() + '_incident.jpg'
+                    
+                    const { error: uploadError } = await supabase.storage
+                        .from('incident-images')
+                        .upload(fileName, capturedImageBlob)
+                    
+                    if (uploadError) throw uploadError
+                    
+                    const { data: urlData } = supabase.storage
+                        .from('incident-images')
+                        .getPublicUrl(fileName)
+                    
+                    imageUrl = urlData.publicUrl
+                }
+                
+                const { error: insertError } = await supabase
+                    .from('incidents')
+                    .insert([{
+                        user_id: user.id,
+                        service: service,
+                        drug_name: drugName,
+                        dosage: dosage,
+                        drug_number: drugNumber,
+                        laboratory: laboratory,
+                        expiry_date: expiryDate,
+                        incident_image_url: imageUrl,
+                        incident_time: incidentTime,
+                        incident_description: description,
+                        wearing_gloves: gloves,
+                        wearing_gown: gown,
+                        wearing_cap: cap,
+                        wearing_apron: apron,
+                        wearing_shoe_covers: shoeCovers,
+                        status: 'pending'
+                    }])
+                
+                if (insertError) throw insertError
+                
+                toggleLoading(false)
+                showAlert('✅ Rapport envoyé avec succès!', 'success')
+                
+                setTimeout(() => {
+                    window.location.href = 'confirmation.html'
+                }, 2000)
+                
+            } catch (error) {
+                toggleLoading(false)
+                console.error('Erreur:', error)
+                showAlert('❌ Erreur: ' + error.message, 'danger')
+            }
+        })
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut()
+            localStorage.removeItem('user')
+            window.location.href = 'index.html'
+        })
+
+        document.getElementById('viewReportsBtn').addEventListener('click', () => {
+            window.location.href = 'confirmation.html'
+        })
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const now = new Date()
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+            document.getElementById('incidentTime').value = now.toISOString().slice(0, 16)
+        })
+    </script>
+</body>
+</html>
