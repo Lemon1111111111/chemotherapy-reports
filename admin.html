@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>👨‍💼 Tableau de Bord Administrateur</title>
+    
+    <!-- ✅ PWA Meta Tags - مضافة -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Incidents PPH">
+    
+    <!-- ✅ أيقونات للـ PWA -->
+    <link rel="apple-touch-icon" href="/images/icon-192-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/icon-192-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512-512.png">
+    
     <link rel="stylesheet" href="css/style.css">
     <style>
         .notification-badge {
@@ -104,8 +117,20 @@
         </div>
     </div>
 
-    <div id="statusModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="card" style="max-width: 400px; margin: 20px;">
+    <!-- ✅ Footer - مضاف -->
+    <div style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 12px 20px; text-align: center; box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1); z-index: 999;">
+        <p style="margin: 0; color: #718096; font-size: 13px;">
+            © 2025 Tous droits réservés - Développé par <strong style="color: #667eea;">Zaki</strong>
+        </p>
+    </div>
+
+    <!-- ✅ زر Dark Mode - مضاف -->
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Mode sombre">
+        <span id="darkModeIcon">🌙</span>
+    </button>
+
+    <div id="statusModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+        <div class="card" style="max-width: 400px; width: 100%; margin: 0;">
             <h3>Modifier le statut du rapport</h3>
             <div class="form-group">
                 <label class="form-label">Nouveau statut</label>
@@ -121,6 +146,50 @@
             </div>
         </div>
     </div>
+
+    <!-- ✅ تسجيل Service Worker - مضاف -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker enregistré:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ Échec Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- ✅ Dark Mode Script - مضاف -->
+    <script>
+        function toggleDarkMode() {
+            const html = document.documentElement
+            const icon = document.getElementById('darkModeIcon')
+            
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme')
+                icon.textContent = '🌙'
+                localStorage.setItem('theme', 'light')
+            } else {
+                html.setAttribute('data-theme', 'dark')
+                icon.textContent = '☀️'
+                localStorage.setItem('theme', 'dark')
+            }
+        }
+        
+        // تحميل الـ Theme المحفوظ
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme')
+            const icon = document.getElementById('darkModeIcon')
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark')
+                if (icon) icon.textContent = '☀️'
+            }
+        })
+    </script>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm'
@@ -275,9 +344,9 @@
 
             const m = document.createElement('div')
             m.id = 'detMod'
-            m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;display:flex;justify-content:center;align-items:center'
+            m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;display:flex;justify-content:center;align-items:center;padding:20px'
             
-            m.innerHTML = '<div class="card" style="max-width:700px;margin:20px;max-height:90vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;margin-bottom:20px"><h3>📋 Détails</h3><button class="cls" style="background:none;border:none;font-size:24px;cursor:pointer;color:#718096">✕</button></div><div><p><strong>👤 Déclarant:</strong> ' + (i.users?.full_name || 'Inconnu') + '</p><p><strong>📧 Email:</strong> ' + (i.users?.email || '-') + '</p><p><strong>🏥 Service:</strong> ' + getService(i.service) + '</p><p><strong>💊 Médicament (DCI):</strong> ' + i.drug_name + '</p><p><strong>💉 Dosage:</strong> ' + (i.dosage || '-') + '</p><p><strong>🔢 N° lot:</strong> ' + i.drug_number + '</p><p><strong>🏭 Labo:</strong> ' + (i.laboratory || '-') + '</p><p><strong>📅 Péremption:</strong> ' + (i.expiry_date ? new Date(i.expiry_date).toLocaleDateString('fr-FR') : '-') + '</p><p><strong>🕐 Date incident:</strong> ' + formatDate(i.incident_time) + '</p><p><strong>📝 Description:</strong> ' + (i.incident_description || '-') + '</p><p><strong>🛡️ EPI:</strong><br>' + (i.wearing_gloves?'✅':'❌') + ' Gants<br>' + (i.wearing_gown?'✅':'❌') + ' Blouse<br>' + (i.wearing_cap?'✅':'❌') + ' Calot<br>' + (i.wearing_apron?'✅':'❌') + ' Masque<br>' + (i.wearing_shoe_covers?'✅':'❌') + ' Lunettes</p><p><strong>📊 Statut:</strong> <span class="status-badge ' + getStatus(i.status).class + '">' + getStatus(i.status).text + '</span></p>' + (i.incident_image_url ? '<p><strong>📷 Photo:</strong><br><img src="' + i.incident_image_url + '" style="max-width:100%;border-radius:10px"></p>' : '') + '</div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-success mds" style="width:auto;padding:10px 20px">🔄 Modifier statut</button><button class="btn btn-secondary cls2" style="width:auto;padding:10px 20px">Fermer</button></div></div>'
+            m.innerHTML = '<div class="card" style="max-width:700px;width:100%;margin:0;max-height:90vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;margin-bottom:20px"><h3>📋 Détails</h3><button class="cls" style="background:none;border:none;font-size:24px;cursor:pointer;color:#718096">✕</button></div><div><p><strong>👤 Déclarant:</strong> ' + (i.users?.full_name || 'Inconnu') + '</p><p><strong>📧 Email:</strong> ' + (i.users?.email || '-') + '</p><p><strong>🏥 Service:</strong> ' + getService(i.service) + '</p><p><strong>💊 Médicament (DCI):</strong> ' + i.drug_name + '</p><p><strong>💉 Dosage:</strong> ' + (i.dosage || '-') + '</p><p><strong>🔢 N° lot:</strong> ' + i.drug_number + '</p><p><strong>🏭 Labo:</strong> ' + (i.laboratory || '-') + '</p><p><strong>📅 Péremption:</strong> ' + (i.expiry_date ? new Date(i.expiry_date).toLocaleDateString('fr-FR') : '-') + '</p><p><strong>🕐 Date incident:</strong> ' + formatDate(i.incident_time) + '</p><p><strong>📝 Description:</strong> ' + (i.incident_description || '-') + '</p><p><strong>🛡️ EPI:</strong><br>' + (i.wearing_gloves?'✅':'❌') + ' Gants<br>' + (i.wearing_gown?'✅':'❌') + ' Blouse<br>' + (i.wearing_cap?'✅':'❌') + ' Calot<br>' + (i.wearing_apron?'✅':'❌') + ' Masque<br>' + (i.wearing_shoe_covers?'✅':'❌') + ' Lunettes</p><p><strong>📊 Statut:</strong> <span class="status-badge ' + getStatus(i.status).class + '">' + getStatus(i.status).text + '</span></p>' + (i.incident_image_url ? '<p><strong>📷 Photo:</strong><br><img src="' + i.incident_image_url + '" alt="Photo de l\'incident" style="max-width:100%;border-radius:10px"></p>' : '') + '</div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-success mds" style="width:auto;padding:10px 20px">🔄 Modifier statut</button><button class="btn btn-secondary cls2" style="width:auto;padding:10px 20px">Fermer</button></div></div>'
             
             document.body.appendChild(m)
             
@@ -285,7 +354,6 @@
             m.querySelector('.cls2').onclick = () => m.remove()
             m.onclick = (e) => { if(e.target.id==='detMod') m.remove() }
             m.querySelector('.mds').onclick = () => { m.remove(); changeStatus(i.id, i.status) }
-            m.querySelector('.prt').onclick = () => printReport(i)
         }
 
         function changeStatus(id, curr) {
