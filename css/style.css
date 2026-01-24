@@ -706,3 +706,31 @@ tr:last-child td {
     background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
     background-size: 1000px 100%;
 }
+/* ===== تحسينات Dark Mode للـ Footer ===== */
+[data-theme="dark"] .navbar,
+[data-theme="dark"] .card {
+    background: var(--bg-white);
+}
+
+[data-theme="dark"] body::before {
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 50%);
+}
+
+/* ===== Padding للصفحات مع Footer ===== */
+body {
+    padding-bottom: 60px;
+}
+
+/* ===== تحسين Table على الموبايل ===== */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+}
