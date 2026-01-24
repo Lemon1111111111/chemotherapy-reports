@@ -27,7 +27,6 @@
         "type": "image/png",
         "purpose": "any maskable"
       },
-    
       {
         "src": "/images/icon-144-144.png",
         "sizes": "144x144",
@@ -47,4 +46,5 @@
         "purpose": "any maskable"
       }
     ]
+
   }
