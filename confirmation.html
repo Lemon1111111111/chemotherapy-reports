@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>✅ Mes Rapports</title>
+    
+    <!-- ✅ PWA Meta Tags - مضافة -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Incidents PPH">
+    
+    <!-- ✅ أيقونات للـ PWA -->
+    <link rel="apple-touch-icon" href="/images/icon-192-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/icon-192-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/icon-512-512.png">
+    
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -57,6 +70,62 @@
             </div>
         </div>
     </div>
+
+    <!-- ✅ Footer - مضاف -->
+    <div style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 12px 20px; text-align: center; box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1); z-index: 999;">
+        <p style="margin: 0; color: #718096; font-size: 13px;">
+            © 2025 Tous droits réservés - Développé par <strong style="color: #667eea;">Zaki</strong>
+        </p>
+    </div>
+
+    <!-- ✅ زر Dark Mode - مضاف -->
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Mode sombre">
+        <span id="darkModeIcon">🌙</span>
+    </button>
+
+    <!-- ✅ تسجيل Service Worker - مضاف -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker enregistré:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ Échec Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- ✅ Dark Mode Script - مضاف -->
+    <script>
+        function toggleDarkMode() {
+            const html = document.documentElement
+            const icon = document.getElementById('darkModeIcon')
+            
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme')
+                icon.textContent = '🌙'
+                localStorage.setItem('theme', 'light')
+            } else {
+                html.setAttribute('data-theme', 'dark')
+                icon.textContent = '☀️'
+                localStorage.setItem('theme', 'dark')
+            }
+        }
+        
+        // تحميل الـ Theme المحفوظ
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme')
+            const icon = document.getElementById('darkModeIcon')
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark')
+                if (icon) icon.textContent = '☀️'
+            }
+        })
+    </script>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm'
@@ -165,9 +234,9 @@
 
             const modal = document.createElement('div')
             modal.id = 'detailsModal'
-            modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;'
+            modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px;'
             
-            modal.innerHTML = '<div class="card" style="max-width: 600px; margin: 20px; max-height: 90vh; overflow-y: auto;"><h3>📋 Détails du Rapport</h3><div style="line-height: 2;"><p><strong>🏥 Service:</strong> ' + getServiceNameFr(inc.service) + '</p><p><strong>💊 Médicament (DCI):</strong> ' + inc.drug_name + '</p><p><strong>💉 Dosage:</strong> ' + (inc.dosage || 'N/A') + '</p><p><strong>🔢 Numéro de lot:</strong> ' + inc.drug_number + '</p><p><strong>🏭 Laboratoire:</strong> ' + (inc.laboratory || 'N/A') + '</p><p><strong>📅 Date de péremption:</strong> ' + (inc.expiry_date ? new Date(inc.expiry_date).toLocaleDateString('fr-FR') : 'N/A') + '</p><p><strong>🕐 Heure de l\'incident:</strong> ' + formatDate(inc.incident_time) + '</p><p><strong>📝 Description:</strong> ' + (inc.incident_description || 'Aucune') + '</p><p><strong>🛡️ Équipements de protection:</strong><br>' + (inc.wearing_gloves ? '✅ Gants' : '❌ Gants') + '<br>' + (inc.wearing_gown ? '✅ Blouse' : '❌ Blouse') + '<br>' + (inc.wearing_cap ? '✅ Calot' : '❌ Calot') + '<br>' + (inc.wearing_apron ? '✅ Masque' : '❌ Masque') + '<br>' + (inc.wearing_shoe_covers ? '✅ Lunettes' : '❌ Lunettes') + '</p><p><strong>📊 Statut:</strong> <span class="status-badge ' + getStatusText(inc.status).class + '">' + getStatusText(inc.status).text + '</span></p>' + (inc.incident_image_url ? '<p><strong>📷 Photo:</strong><br><img src="' + inc.incident_image_url + '" style="max-width: 100%; border-radius: 10px; margin-top: 10px;"></p>' : '') + '</div><button class="btn btn-secondary" onclick="this.closest(\'#detailsModal\').remove()">Fermer</button></div>'
+            modal.innerHTML = '<div class="card" style="max-width: 600px; width: 100%; margin: 0; max-height: 90vh; overflow-y: auto;"><h3>📋 Détails du Rapport</h3><div style="line-height: 2;"><p><strong>🏥 Service:</strong> ' + getServiceNameFr(inc.service) + '</p><p><strong>💊 Médicament (DCI):</strong> ' + inc.drug_name + '</p><p><strong>💉 Dosage:</strong> ' + (inc.dosage || 'N/A') + '</p><p><strong>🔢 Numéro de lot:</strong> ' + inc.drug_number + '</p><p><strong>🏭 Laboratoire:</strong> ' + (inc.laboratory || 'N/A') + '</p><p><strong>📅 Date de péremption:</strong> ' + (inc.expiry_date ? new Date(inc.expiry_date).toLocaleDateString('fr-FR') : 'N/A') + '</p><p><strong>🕐 Heure de l\'incident:</strong> ' + formatDate(inc.incident_time) + '</p><p><strong>📝 Description:</strong> ' + (inc.incident_description || 'Aucune') + '</p><p><strong>🛡️ Équipements de protection:</strong><br>' + (inc.wearing_gloves ? '✅ Gants' : '❌ Gants') + '<br>' + (inc.wearing_gown ? '✅ Blouse' : '❌ Blouse') + '<br>' + (inc.wearing_cap ? '✅ Calot' : '❌ Calot') + '<br>' + (inc.wearing_apron ? '✅ Masque' : '❌ Masque') + '<br>' + (inc.wearing_shoe_covers ? '✅ Lunettes' : '❌ Lunettes') + '</p><p><strong>📊 Statut:</strong> <span class="status-badge ' + getStatusText(inc.status).class + '">' + getStatusText(inc.status).text + '</span></p>' + (inc.incident_image_url ? '<p><strong>📷 Photo:</strong><br><img src="' + inc.incident_image_url + '" alt="Photo de l\'incident" style="max-width: 100%; border-radius: 10px; margin-top: 10px;"></p>' : '') + '</div><button class="btn btn-secondary" onclick="this.closest(\'#detailsModal\').remove()">Fermer</button></div>'
 
             document.body.appendChild(modal)
             
